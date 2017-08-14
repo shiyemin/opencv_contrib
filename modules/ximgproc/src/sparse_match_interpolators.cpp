@@ -169,9 +169,12 @@ Ptr<EdgeAwareInterpolatorImpl> EdgeAwareInterpolatorImpl::create()
 void EdgeAwareInterpolatorImpl::interpolate(InputArray from_image, InputArray from_points, InputArray, InputArray to_points, OutputArray dense_flow)
 {
     CV_Assert( !from_image.empty() && (from_image.depth() == CV_8U) && (from_image.channels() == 3 || from_image.channels() == 1) );
-    CV_Assert( !from_points.empty() && from_points.isVector() &&
+    if(!(!from_points.empty() && from_points.isVector() &&
                !to_points  .empty() && to_points  .isVector() &&
-               from_points.sameSize(to_points) );
+               from_points.sameSize(to_points) ) )
+    {
+        return;
+    }
 
     w = from_image.cols();
     h = from_image.rows();
@@ -854,6 +857,11 @@ void EdgeAwareInterpolatorImpl::ransacInterpolation(vector<SparseMatch>& matches
         Point2f* dst_row = dst_dense_flow.ptr<Point2f>(i);
         for(int j=0;j<w;j++)
         {
+            if (transforms[label_row[j]].cols <= 0 ||
+                    transforms[label_row[j]].rows <= 0)
+            {
+                continue;
+            }
             tr = transforms[label_row[j]].ptr<float>(0);
             dst_row[j] = Point2f(tr[0]*j+tr[1]*i+tr[2],tr[3]*j+tr[4]*i+tr[5]) - Point2f((float)j,(float)i);
         }
